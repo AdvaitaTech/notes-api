@@ -34,6 +34,21 @@ const singleNoteSchema = z.object({
 
 const noteResponseSchema = z.array(singleNoteSchema);
 
+const updateNoteRequestSchema = z
+  .object({
+    title: z.string(),
+    body: z.string(),
+    tags: z.array(z.string()),
+  })
+  .partial()
+  .refine(
+    (data) =>
+      data.title !== undefined ||
+      data.body !== undefined ||
+      data.tags !== undefined,
+    { message: "Atleast one field must be updated" }
+  );
+
 router.post("/", async (req, res) => {
   try {
     if (!res.locals.userId)
@@ -54,7 +69,12 @@ router.post("/", async (req, res) => {
         tags: result.data.tags,
         userId: userId,
       })
-      .returning({ id: Notes.id, title: Notes.title, body: Notes.body });
+      .returning({
+        id: Notes.id,
+        title: Notes.title,
+        body: Notes.body,
+        tags: Notes.tags,
+      });
 
     res.send(newNode[0]);
   } catch (e) {
@@ -111,7 +131,40 @@ router.get("/:id", async (req, res) => {
 });
 
 router.put("/:id", async (req, res) => {
-  res.send({});
+  try {
+    if (!res.locals.userId)
+      throw new TokenError("Invalid authorization token.");
+    let locals = localsSchema.safeParse(res.locals);
+    if (!locals.success) throw new TokenError("Invalid authorization token.");
+    let userId = locals.data.userId;
+    let id: number;
+    try {
+      id = parseInt(req.params.id);
+    } catch (e) {
+      throw new BadDataError("Invalid note id. id must be an integer");
+    }
+    let updateQuery = updateNoteRequestSchema.safeParse(req.body);
+    if (!updateQuery.success)
+      throw new BadDataError("Invalid data. Must provide title, body or tags");
+    const notes = await db
+      .update(Notes)
+      .set(updateQuery.data)
+      .where(and(eq(Notes.id, id), eq(Notes.userId, userId)))
+      .returning({
+        id: Notes.id,
+        title: Notes.title,
+        body: Notes.body,
+        tags: Notes.tags,
+      });
+    let results = noteResponseSchema.safeParse(notes);
+    if (!results.success || !results.data[0])
+      throw new NotFoundError("Note not found");
+    else res.send(results.data[0]);
+  } catch (e) {
+    if (e instanceof RouteError)
+      return res.status(e.code).json({ error: e.message });
+    else return res.status(500).json({ error: "Internal server error." });
+  }
 });
 
 router.delete("/:id", async (req, res) => {
