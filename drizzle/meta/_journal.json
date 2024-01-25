@@ -15,6 +15,13 @@
       "when": 1706181115736,
       "tag": "0001_new_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1706185775131,
+      "tag": "0002_old_leper_queen",
+      "breakpoints": true
     }
   ]
 }

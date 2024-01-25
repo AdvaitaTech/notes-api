@@ -11,6 +11,10 @@ export const Notes = pgTable("notes", {
   id: serial("id").primaryKey(),
   title: varchar("name", { length: 300 }),
   body: text("body"),
-  userId: integer("user_id").references(() => Users.id),
+  userId: integer("user_id")
+    .references(() => Users.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
   tags: varchar("tags", { length: 300 }).array(),
 });
