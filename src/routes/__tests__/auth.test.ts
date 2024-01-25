@@ -1,9 +1,17 @@
 import app from "app";
+import { db } from "config/db";
+import { users } from "config/schema";
 import request from "supertest";
 
 const validationMessage =
   "Invalid data. Required fields are name, email, password and confirm.";
+const loginValidationMessage =
+  "Invalid data. Required fields are email and password.";
 describe("Auth Routes", () => {
+  beforeAll(async () => {
+    await db.delete(users);
+  });
+
   describe("POST /auth/register", () => {
     it("should show data error if all information is not provided", async () => {
       let res = await request(app).post("/auth/register").send({});
@@ -53,6 +61,33 @@ describe("Auth Routes", () => {
       });
       expect(res.status).toBe(400);
       expect(res.body.error).toBe("Email already exists");
+    });
+  });
+
+  describe("POST /auth/login", () => {
+    it("should show data error if all information is not provided", async () => {
+      let res = await request(app).post("/auth/login").send({});
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe(loginValidationMessage);
+      res = await request(app).post("/auth/login").send({ email: "" });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe(loginValidationMessage);
+    });
+
+    it("should login user", async () => {
+      const res = await request(app).post("/auth/login").send({
+        email: "test1@example.com",
+        password: "testing",
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it("should login user", async () => {
+      const res = await request(app).post("/auth/login").send({
+        email: "test1@example.com",
+        password: "testing",
+      });
+      expect(res.status).toBe(200);
     });
   });
 });

@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import { db } from "config/db";
 import { users } from "config/schema";
-import { BadDataError } from "routes/route-errors";
+import { eq } from "drizzle-orm";
+import { AuthError, BadDataError } from "routes/route-errors";
 
 export const createUser = async ({
   name,
@@ -22,4 +23,22 @@ export const createUser = async ({
   } catch (err) {
     throw new BadDataError("Email already exists");
   }
+};
+
+export const loginUser = async ({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) => {
+  const user = await db.select().from(users).where(eq(users.email, email));
+  if (!user[0]) throw new AuthError("Invalid credentials");
+  const success = await bcrypt.compare(password, user[0].password);
+  if (success) {
+    return {
+      id: user[0].id,
+      email: user[0].email,
+    };
+  } else throw new AuthError("Invalid credentials");
 };
