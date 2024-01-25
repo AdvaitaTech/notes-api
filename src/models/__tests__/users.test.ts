@@ -1,4 +1,4 @@
-import { db } from "config/db";
+import { connection, db } from "config/db";
 import { Users } from "config/schema";
 import { eq } from "drizzle-orm";
 import { createUser, loginUser } from "models/users";
@@ -6,6 +6,10 @@ import { createUser, loginUser } from "models/users";
 describe("User Model", () => {
   beforeAll(async () => {
     await db.delete(Users);
+  });
+
+  afterAll(async () => {
+    await connection.end();
   });
   it("should create user", async () => {
     const user = await createUser({

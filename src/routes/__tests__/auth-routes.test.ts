@@ -1,5 +1,5 @@
 import app from "app";
-import { db } from "config/db";
+import { connection, db } from "config/db";
 import { Users } from "config/schema";
 import request from "supertest";
 
@@ -10,6 +10,9 @@ const loginValidationMessage =
 describe("Auth Routes", () => {
   beforeAll(async () => {
     await db.delete(Users);
+  });
+  afterAll(async () => {
+    await connection.end();
   });
 
   describe("POST /auth/register", () => {
