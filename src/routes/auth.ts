@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { Router } from "express";
 import { z } from "zod";
 import { RouteError, BadDataError } from "./route-errors";
@@ -52,7 +53,8 @@ router.post("/login", async (req, res) => {
     }
     const { email, password } = result.data;
     const user = await loginUser({ email, password });
-    return res.json({ user });
+    const token = jwt.sign({ id: user.id }, process.env.SECRET || "");
+    return res.json({ token });
   } catch (e) {
     if (e instanceof RouteError)
       return res.status(e.code).json({ error: e.message });
