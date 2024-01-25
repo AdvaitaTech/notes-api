@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { RouteError, BadDataError } from "./route-errors";
+import { createUser } from "models/users";
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const userSchema = z.object({
   confirm: z.string().min(6),
 });
 
-router.post("/register", (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const result = userSchema.safeParse(req.body);
     if (!result.success) {
@@ -26,7 +27,9 @@ router.post("/register", (req, res) => {
         );
       }
     }
-    res.json({ success: false });
+    const { name, email, password } = result.data;
+    const user = await createUser({ name, email, password });
+    return res.json({ user });
   } catch (e) {
     if (e instanceof RouteError)
       return res.status(e.code).json({ error: e.message });

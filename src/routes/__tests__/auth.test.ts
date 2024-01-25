@@ -25,8 +25,8 @@ describe("Auth Routes", () => {
       let res = await request(app).post("/auth/register").send({
         name: "test",
         email: "test0@example.com",
-        password: "testing",
-        confirm: "testing",
+        password: "test",
+        confirm: "test",
       });
       expect(res.status).toBe(400);
       expect(res.body.error).toBe(
@@ -51,8 +51,8 @@ describe("Auth Routes", () => {
         password: "testing",
         confirm: "testing",
       });
-      expect(res.status).toBe(403);
-      expect(res.body.error).toBe("Email already exists.");
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("Email already exists");
     });
   });
 });
