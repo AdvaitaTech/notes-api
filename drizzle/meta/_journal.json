@@ -8,6 +8,13 @@
       "when": 1706172280656,
       "tag": "0000_icy_sue_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1706181115736,
+      "tag": "0001_new_scalphunter",
+      "breakpoints": true
     }
   ]
 }
