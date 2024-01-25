@@ -4,6 +4,7 @@ import { RouteError, BadDataError, TokenError } from "./route-errors";
 import { tokenMiddleware } from "middleware";
 import { db } from "config/db";
 import { Notes } from "config/schema";
+import { eq } from "drizzle-orm";
 
 const router = Router();
 // All note routes need auth
@@ -18,6 +19,15 @@ const createNoteSchema = z.object({
   body: z.string(),
   tags: z.array(z.string()),
 });
+
+const noteResponseSchema = z.array(
+  z.object({
+    id: z.number(),
+    title: z.string(),
+    body: z.string(),
+    tags: z.array(z.string()),
+  })
+);
 
 router.post("/", async (req, res) => {
   try {
@@ -50,7 +60,21 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  res.send({});
+  try {
+    if (!res.locals.userId)
+      throw new TokenError("Invalid authorization token.");
+    let locals = localsSchema.safeParse(res.locals);
+    if (!locals.success) throw new TokenError("Invalid authorization token.");
+    let userId = locals.data.userId;
+    const notes = await db.select().from(Notes).where(eq(Notes.userId, userId));
+    let results = noteResponseSchema.safeParse(notes);
+    if (!results.success) res.send({ notes: [] });
+    else res.send({ notes: results.data });
+  } catch (e) {
+    if (e instanceof RouteError)
+      return res.status(e.code).json({ error: e.message });
+    else return res.status(500).json({ error: "Internal server error." });
+  }
 });
 
 router.get("/:id", async (req, res) => {

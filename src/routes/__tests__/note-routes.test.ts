@@ -75,4 +75,58 @@ describe("Auth Routes", () => {
       expect(res.body.title).toBe("Note 1");
     });
   });
+
+  describe("GET /notes/", () => {
+    // creating a separate user so that testing
+    // number of notes is easier
+    beforeAll(async () => {
+      await createUser({
+        name: "noteTest",
+        email: "notes2@example.com",
+        password: "testing",
+      });
+      const res = await request(app).post("/auth/login").send({
+        email: "notes2@example.com",
+        password: "testing",
+      });
+      if (!res.body || !res.body.token) return;
+      token = res.body.token;
+    });
+
+    it("should throw auth error if no token provided", async () => {
+      const res = await request(app).get("/notes/");
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe("Invalid authorization token.");
+    });
+
+    it("show empty notes if none are created", async () => {
+      const res = await request(app)
+        .get("/notes/")
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(200);
+      expect(res.body.notes).toHaveLength(0);
+    });
+
+    it("should show all notes for user", async () => {
+      let noteCount = 5;
+      for (let i = 0; i < noteCount; i++) {
+        await request(app)
+          .post("/notes/")
+          .set("Authorization", "Bearer " + token)
+          .send({
+            title: "Custom Note " + i,
+            body: "This is a test note",
+            tags: ["test", "note"],
+          });
+      }
+      let res = await request(app)
+        .get("/notes/")
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(200);
+      expect(res.body.notes).toHaveLength(noteCount);
+      for (let i = 0; i < noteCount; i++) {
+        expect(res.body.notes[i].title).toBe("Custom Note " + i);
+      }
+    });
+  });
 });
