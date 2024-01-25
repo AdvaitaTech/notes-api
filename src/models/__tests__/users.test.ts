@@ -1,11 +1,11 @@
 import { db } from "config/db";
-import { users } from "config/schema";
+import { Users } from "config/schema";
 import { eq } from "drizzle-orm";
 import { createUser, loginUser } from "models/users";
 
 describe("User Model", () => {
   beforeAll(async () => {
-    await db.delete(users);
+    await db.delete(Users);
   });
   it("should create user", async () => {
     const user = await createUser({
@@ -21,8 +21,8 @@ describe("User Model", () => {
   it("should not store password in plain text", async () => {
     const user = await db
       .select()
-      .from(users)
-      .where(eq(users.email, "test1@email.com"));
+      .from(Users)
+      .where(eq(Users.email, "test1@email.com"));
     expect(user[0].password).not.toBe("testing");
   });
 

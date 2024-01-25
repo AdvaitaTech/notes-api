@@ -1,6 +1,6 @@
 import app from "app";
 import { db } from "config/db";
-import { users } from "config/schema";
+import { Users } from "config/schema";
 import request from "supertest";
 
 const validationMessage =
@@ -9,7 +9,7 @@ const loginValidationMessage =
   "Invalid data. Required fields are email and password.";
 describe("Auth Routes", () => {
   beforeAll(async () => {
-    await db.delete(users);
+    await db.delete(Users);
   });
 
   describe("POST /auth/register", () => {

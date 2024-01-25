@@ -1,6 +1,6 @@
 import { pgTable, text, serial, varchar, integer } from "drizzle-orm/pg-core";
 
-export const users = pgTable("users", {
+export const Users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 200 }),
   email: varchar("email", { length: 200 }).unique().notNull(),
@@ -11,6 +11,6 @@ export const Notes = pgTable("notes", {
   id: serial("id").primaryKey(),
   title: varchar("name", { length: 300 }),
   body: text("body"),
-  userId: integer("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => Users.id),
   tags: varchar("tags", { length: 300 }).array(),
 });
