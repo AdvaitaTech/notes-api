@@ -52,3 +52,10 @@ export class BuildError extends RouteError {
     this.name = "BuildError";
   }
 }
+
+export class NotFoundError extends RouteError {
+  constructor(message: string) {
+    super(message, 404);
+    this.name = "NotFoundError";
+  }
+}

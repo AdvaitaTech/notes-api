@@ -72,6 +72,7 @@ describe("Auth Routes", () => {
           tags: ["test", "note"],
         });
       expect(res.status).toBe(200);
+      expect(res.body.id).toBeGreaterThan(0);
       expect(res.body.title).toBe("Note 1");
     });
   });
@@ -127,6 +128,56 @@ describe("Auth Routes", () => {
       for (let i = 0; i < noteCount; i++) {
         expect(res.body.notes[i].title).toBe("Custom Note " + i);
       }
+    });
+  });
+
+  describe("GET /notes/:id", () => {
+    let noteId: number = 0;
+    // creating a separate user so that testing
+    // number of notes is easier
+    beforeAll(async () => {
+      await createUser({
+        name: "noteTest",
+        email: "notes3@example.com",
+        password: "testing",
+      });
+      let res = await request(app).post("/auth/login").send({
+        email: "notes3@example.com",
+        password: "testing",
+      });
+      if (!res.body || !res.body.token) return;
+      token = res.body.token;
+      res = await request(app)
+        .post("/notes/")
+        .set("Authorization", "Bearer " + token)
+        .send({
+          title: "Testing GET Note",
+          body: "This is a test note",
+          tags: ["test", "note"],
+        });
+      noteId = res.body.id;
+    });
+
+    it("should throw auth error if no token provided", async () => {
+      const res = await request(app).get(`/notes/${noteId}`);
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe("Invalid authorization token.");
+    });
+
+    it("show give error if wrong id", async () => {
+      const res = await request(app)
+        .get(`/notes/${5555555}`)
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(404);
+    });
+
+    it("should get valid note back", async () => {
+      const res = await request(app)
+        .get(`/notes/${noteId}`)
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(noteId);
+      expect(res.body.title).toBe("Testing GET Note");
     });
   });
 });

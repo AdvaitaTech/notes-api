@@ -101,8 +101,14 @@ describe("Auth Routes", () => {
     });
 
     it("should login user", async () => {
+      await request(app).post("/auth/register").send({
+        name: "test",
+        email: "test3@example.com",
+        password: "testing",
+        confirm: "testing",
+      });
       const res = await request(app).post("/auth/login").send({
-        email: "test1@example.com",
+        email: "test3@example.com",
         password: "testing",
       });
       expect(res.status).toBe(200);
