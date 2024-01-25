@@ -180,6 +180,7 @@ describe("Note Routes", () => {
       expect(res.body.title).toBe("Testing GET Note");
     });
   });
+
   describe("PUT /notes/:id", () => {
     let noteId: number = 0;
     // creating a separate user so that testing
@@ -238,6 +239,58 @@ describe("Note Routes", () => {
       expect(res.body.body).toBe("Changed body");
       expect(res.body.tags).toHaveLength(1);
       expect(res.body.tags[0]).toBe("daily");
+    });
+  });
+
+  describe("DELETE /notes/:id", () => {
+    let noteId: number = 0;
+    // creating a separate user so that testing
+    // number of notes is easier
+    beforeAll(async () => {
+      await createUser({
+        name: "noteTest",
+        email: "notes5@example.com",
+        password: "testing",
+      });
+      let res = await request(app).post("/auth/login").send({
+        email: "notes5@example.com",
+        password: "testing",
+      });
+      if (!res.body || !res.body.token) return;
+      token = res.body.token;
+      res = await request(app)
+        .post("/notes/")
+        .set("Authorization", "Bearer " + token)
+        .send({
+          title: "Testing DELETE Note",
+          body: "This is a test note",
+          tags: ["test", "note"],
+        });
+      noteId = res.body.id;
+    });
+
+    it("should throw auth error if no token provided", async () => {
+      const res = await request(app).delete(`/notes/${noteId}`);
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe("Invalid authorization token.");
+    });
+
+    it("show give error if wrong id", async () => {
+      const res = await request(app)
+        .delete(`/notes/${5555555}`)
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(404);
+    });
+
+    it("should delete note", async () => {
+      let res = await request(app)
+        .delete(`/notes/${noteId}`)
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(200);
+      res = await request(app)
+        .get(`/notes/${noteId}`)
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(404);
     });
   });
 });

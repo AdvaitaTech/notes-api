@@ -168,7 +168,30 @@ router.put("/:id", async (req, res) => {
 });
 
 router.delete("/:id", async (req, res) => {
-  res.send({});
+  try {
+    if (!res.locals.userId)
+      throw new TokenError("Invalid authorization token.");
+    let locals = localsSchema.safeParse(res.locals);
+    if (!locals.success) throw new TokenError("Invalid authorization token.");
+    let userId = locals.data.userId;
+    let id: number;
+    try {
+      id = parseInt(req.params.id);
+    } catch (e) {
+      throw new BadDataError("Invalid note id. id must be an integer");
+    }
+    const notes = await db
+      .delete(Notes)
+      .where(and(eq(Notes.id, id), eq(Notes.userId, userId)))
+      .returning({ id: Notes.id });
+    if (notes.length === 0)
+      throw new NotFoundError("Note not found. Unable to delete");
+    res.send({});
+  } catch (e) {
+    if (e instanceof RouteError)
+      return res.status(e.code).json({ error: e.message });
+    else return res.status(500).json({ error: "Internal server error." });
+  }
 });
 
 export default router;
