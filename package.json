@@ -7,8 +7,9 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "db:migrate": "NODE_ENV=development ts-node src/config/migrate.ts",
-    "test": "NODE_ENV=test jest",
+    "db:setup": "createdb notes_dev; NODE_ENV=development ts-node src/config/migrate.ts",
+    "test:setup": "createdb notes_test; NODE_ENV=test ts-node src/config/migrate.ts",
+    "test": "NODE_ENV=test dotenv-flow jest",
     "build": "tsc",
     "start": "NODE_ENV=development nodemon src/server.ts"
   },
@@ -28,6 +29,7 @@
     "@types/node": "^20.11.6",
     "@types/pg": "^8.10.9",
     "@types/supertest": "^6.0.2",
+    "dotenv-flow-cli": "^1.1.1",
     "drizzle-kit": "^0.20.13",
     "jest": "^29.7.0",
     "nodemon": "^3.0.3",
