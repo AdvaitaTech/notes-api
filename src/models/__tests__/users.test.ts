@@ -23,7 +23,7 @@ describe("User Model", () => {
       .select()
       .from(users)
       .where(eq(users.email, "test1@email.com"));
-    expect(user[0].password).not.toBe("pass2");
+    expect(user[0].password).not.toBe("pass1");
   });
 
   it("should not allow duplicate email", async () => {
