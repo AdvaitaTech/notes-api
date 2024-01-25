@@ -56,9 +56,16 @@ describe("Auth Routes", () => {
     });
 
     it("should show error for duplicate email", async () => {
-      const res = await request(app).post("/auth/register").send({
+      let res = await request(app).post("/auth/register").send({
         name: "test",
-        email: "test1@example.com",
+        email: "test2@example.com",
+        password: "testing",
+        confirm: "testing",
+      });
+      expect(res.status).toBe(200);
+      res = await request(app).post("/auth/register").send({
+        name: "test",
+        email: "test2@example.com",
         password: "testing",
         confirm: "testing",
       });
@@ -77,12 +84,20 @@ describe("Auth Routes", () => {
       expect(res.body.error).toBe(loginValidationMessage);
     });
 
-    it("should login user", async () => {
+    it("should fail on wrong email", async () => {
       const res = await request(app).post("/auth/login").send({
-        email: "test1@example.com",
+        email: "wrong@example.com",
         password: "testing",
       });
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(401);
+    });
+
+    it("should fail on wrong password", async () => {
+      const res = await request(app).post("/auth/login").send({
+        email: "wrong@example.com",
+        password: "wrongpass",
+      });
+      expect(res.status).toBe(401);
     });
 
     it("should login user", async () => {
