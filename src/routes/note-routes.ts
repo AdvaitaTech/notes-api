@@ -1,14 +1,52 @@
 import { Router } from "express";
 import { z } from "zod";
-import { RouteError, BadDataError } from "./route-errors";
+import { RouteError, BadDataError, TokenError } from "./route-errors";
 import { tokenMiddleware } from "middleware";
+import { db } from "config/db";
+import { Notes } from "config/schema";
 
 const router = Router();
 // All note routes need auth
 router.use(tokenMiddleware);
 
+const localsSchema = z.object({
+  userId: z.number(),
+});
+
+const createNoteSchema = z.object({
+  title: z.string(),
+  body: z.string(),
+  tags: z.array(z.string()),
+});
+
 router.post("/", async (req, res) => {
-  res.send({});
+  try {
+    if (!res.locals.userId)
+      throw new TokenError("Invalid authorization token.");
+    let locals = localsSchema.safeParse(res.locals);
+    if (!locals.success) throw new TokenError("Invalid authorization token.");
+    let userId = locals.data.userId;
+    const result = createNoteSchema.safeParse(req.body);
+    if (!result.success)
+      throw new BadDataError(
+        "Invalid data. Required fields are title(string), body(string), and tags(array)."
+      );
+    const newNode = await db
+      .insert(Notes)
+      .values({
+        title: result.data.title,
+        body: result.data.body,
+        tags: result.data.tags,
+        userId: userId,
+      })
+      .returning({ title: Notes.title, body: Notes.body });
+
+    res.send(newNode[0]);
+  } catch (e) {
+    if (e instanceof RouteError)
+      return res.status(e.code).json({ error: e.message });
+    else return res.status(500).json({ error: "Internal server error." });
+  }
 });
 
 router.get("/", async (req, res) => {

@@ -15,12 +15,14 @@ export const tokenMiddleware = (
     ? req.headers.authorization.split(" ")[1]
     : null;
   if (token) {
-    let userObj = jwt.verify(token, process.env.SECRET || "");
-    let result = tokenSchema.safeParse(userObj);
-    if (!result.success) {
-      return;
-    }
-    res.locals.userId = result.data.id;
+    try {
+      let userObj = jwt.verify(token, process.env.SECRET || "");
+      let result = tokenSchema.safeParse(userObj);
+      if (!result.success) {
+        return;
+      }
+      res.locals.userId = result.data.id;
+    } catch (e) {}
   }
 
   next();
