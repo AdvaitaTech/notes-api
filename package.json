@@ -10,7 +10,7 @@
     "db:setup": "createdb notes_dev; NODE_ENV=development ts-node src/config/migrate.ts",
     "test:setup": "createdb notes_test; NODE_ENV=test ts-node src/config/migrate.ts",
     "test": "NODE_ENV=test dotenv-flow -- ts-node src/testSetup.ts; NODE_ENV=test dotenv-flow -- jest",
-    "build": "tsc",
+    "build": "rm -r build; tsc && tsc-alias",
     "start": "NODE_ENV=development dotenv-flow nodemon"
   },
   "nodemonConfig": {
@@ -52,6 +52,7 @@
     "supertest": "^6.3.4",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
   }
