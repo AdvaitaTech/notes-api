@@ -23,35 +23,55 @@ describe("User Model", () => {
   });
 
   it("should not store password in plain text", async () => {
+    await createUser({
+      name: "John Doe",
+      email: "test2@email.com",
+      password: "testing",
+    });
     const user = await db
       .select()
       .from(Users)
-      .where(eq(Users.email, "test1@email.com"));
+      .where(eq(Users.email, "test2@email.com"));
     expect(user[0].password).not.toBe("testing");
   });
 
   it("should not allow duplicate email", async () => {
+    await createUser({
+      name: "John Doe",
+      email: "test3@email.com",
+      password: "testing",
+    });
     await expect(
       createUser({
         name: "John Doe",
-        email: "test1@email.com",
-        password: "pass3",
+        email: "test3@email.com",
+        password: "password3",
       })
     ).rejects.toThrow();
   });
 
   it("should login user", async () => {
-    const user = await loginUser({
-      email: "test1@email.com",
+    await createUser({
+      name: "John Doe",
+      email: "test4@email.com",
       password: "testing",
     });
-    expect(user.email).toBe("test1@email.com");
+    const user = await loginUser({
+      email: "test4@email.com",
+      password: "testing",
+    });
+    expect(user.email).toBe("test4@email.com");
   });
 
   it("should fail login", async () => {
+    await createUser({
+      name: "John Doe",
+      email: "test5@email.com",
+      password: "testing",
+    });
     await expect(
       loginUser({
-        email: "test1@email.com",
+        email: "test5@email.com",
         password: "wrongpass",
       })
     ).rejects.toThrow();
