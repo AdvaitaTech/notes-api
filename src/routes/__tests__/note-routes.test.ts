@@ -293,4 +293,79 @@ describe("Note Routes", () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe("get /notes/search", () => {
+    // creating a separate user so that testing
+    // number of notes is easier
+    beforeAll(async () => {
+      await createUser({
+        name: "noteTest",
+        email: "notes6@example.com",
+        password: "testing",
+      });
+      let res = await request(app).post("/auth/login").send({
+        email: "notes6@example.com",
+        password: "testing",
+      });
+      if (!res.body || !res.body.token) return;
+      token = res.body.token;
+      let notes = [
+        {
+          title: "First note",
+          body: "Some note text",
+          tags: ["test", "note"],
+        },
+        {
+          title: "Worldbuilding",
+          body: "I love creating new realms",
+          tags: ["test", "note"],
+        },
+        {
+          title: "More words",
+          body: "I stille love worldbuilding",
+          tags: ["test", "note"],
+        },
+      ];
+      for (let note of notes) {
+        await request(app)
+          .post("/notes/")
+          .set("Authorization", "Bearer " + token)
+          .send(note);
+      }
+    });
+
+    it("should throw auth error if no token provided", async () => {
+      const res = await request(app).get(`/notes/search`);
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe("Invalid authorization token.");
+    });
+
+    it("show give perform search on one field", async () => {
+      let tests = [
+        { query: "first", count: 1 },
+        { query: "creating", count: 1 },
+      ];
+      for (let test of tests) {
+        const res = await request(app)
+          .get(`/notes/search?query=${test.query}`)
+          .set("Authorization", "Bearer " + token);
+        expect(res.status).toBe(200);
+        expect(res.body.notes).toHaveLength(test.count);
+      }
+    });
+
+    it("should perform search on multiple fields", async () => {
+      let tests = [
+        { query: "worldbuilding", count: 2 },
+        { query: "note", count: 3 },
+      ];
+      for (let test of tests) {
+        const res = await request(app)
+          .get(`/notes/search?query=${test.query}`)
+          .set("Authorization", "Bearer " + token);
+        expect(res.status).toBe(200);
+        expect(res.body.notes).toHaveLength(test.count);
+      }
+    });
+  });
 });

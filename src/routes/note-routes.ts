@@ -9,7 +9,7 @@ import {
 import { tokenMiddleware } from "middleware";
 import { db } from "config/db";
 import { Notes } from "config/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like, or, sql } from "drizzle-orm";
 
 const router = Router();
 // All note routes need auth
@@ -92,6 +92,39 @@ router.get("/", async (req, res) => {
     if (!locals.success) throw new TokenError("Invalid authorization token.");
     let userId = locals.data.userId;
     const notes = await db.select().from(Notes).where(eq(Notes.userId, userId));
+    let results = noteResponseSchema.safeParse(notes);
+    if (!results.success) res.send({ notes: [] });
+    else res.send({ notes: results.data });
+  } catch (e) {
+    if (e instanceof RouteError)
+      return res.status(e.code).json({ error: e.message });
+    else return res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+router.get("/search", async (req, res) => {
+  try {
+    if (!res.locals.userId)
+      throw new TokenError("Invalid authorization token.");
+    let locals = localsSchema.safeParse(res.locals);
+    if (!locals.success) throw new TokenError("Invalid authorization token.");
+    let userId = locals.data.userId;
+    let query = req.query.query;
+    if (!query)
+      throw new BadDataError(
+        "Invalid query. query must be a string passed as a query parameter"
+      );
+    let queryString = `%${query}%`;
+    const notes = await db
+      .select()
+      .from(Notes)
+      .where(
+        sql`${Notes.userId} = ${userId} AND 
+          (${Notes.title} ILIKE ${queryString}
+            OR ${Notes.body} ILIKE ${queryString}
+            OR EXISTS (SELECT FROM UNNEST(${Notes.tags}) tag WHERE tag ILIKE ${queryString})
+          )`
+      );
     let results = noteResponseSchema.safeParse(notes);
     if (!results.success) res.send({ notes: [] });
     else res.send({ notes: results.data });
