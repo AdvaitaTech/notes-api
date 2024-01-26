@@ -7,8 +7,6 @@ import request from "supertest";
 describe("Note Routes", () => {
   let token: string = "";
   beforeAll(async () => {
-    await db.delete(Users);
-    await db.delete(Notes);
     await createUser({
       name: "noteTest",
       email: "notes@example.com",
