@@ -1,7 +1,7 @@
 import { RedisClientType, createClient } from "redis";
 
 let connection: RedisClientType | null = null;
-export const getConnection = async () => {
+export const getRedisConnection = async () => {
   if (connection) return connection;
   connection = (await createClient({
     url: process.env.REDISURL || "redis://localhost:6379",
@@ -17,7 +17,7 @@ export const getConnection = async () => {
   return connection;
 };
 
-export const closeConnection = async () => {
+export const closeRedisConnection = async () => {
   if (connection) {
     connection.disconnect();
     connection = null;
@@ -30,7 +30,7 @@ export const isRequestAllowed = async (
   maxRequests: number,
   intervalInMs: number
 ) => {
-  let connection = await getConnection();
+  let connection = await getRedisConnection();
   let windowStartString = await connection.get(`${userId}-${requestKey}-time`);
   let windowStart = windowStartString ? parseFloat(windowStartString) : 0;
   let now = Date.now();

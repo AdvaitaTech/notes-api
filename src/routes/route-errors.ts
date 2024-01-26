@@ -59,3 +59,10 @@ export class NotFoundError extends RouteError {
     this.name = "NotFoundError";
   }
 }
+
+export class RateLimitError extends RouteError {
+  constructor(message: string) {
+    super(message, 429);
+    this.name = "RateLimitError";
+  }
+}

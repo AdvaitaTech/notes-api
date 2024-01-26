@@ -1,13 +1,13 @@
-import { getConnection, isRequestAllowed } from "rate-limiter/limiter";
+import { getRedisConnection, isRequestAllowed } from "rate-limiter/limiter";
 
 describe("Rate Limiter", () => {
   afterAll(async () => {
-    let connection = await getConnection();
+    let connection = await getRedisConnection();
     await connection.disconnect();
   });
 
   it("should connect to redis", async () => {
-    await expect(getConnection()).resolves.toBeTruthy();
+    await expect(getRedisConnection()).resolves.toBeTruthy();
   });
 
   it("should allow 5 requests in 1 second", async () => {

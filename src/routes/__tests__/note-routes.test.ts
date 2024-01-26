@@ -2,6 +2,7 @@ import app from "app";
 import { connection, db } from "config/db";
 import { Notes, Users } from "config/schema";
 import { createUser } from "models/users";
+import { closeRedisConnection } from "rate-limiter/limiter";
 import request from "supertest";
 
 describe("Note Routes", () => {
@@ -20,6 +21,7 @@ describe("Note Routes", () => {
     token = res.body.token;
   });
   afterAll(async () => {
+    await closeRedisConnection();
     await connection.end();
   });
 
@@ -364,6 +366,63 @@ describe("Note Routes", () => {
         expect(res.status).toBe(200);
         expect(res.body.notes).toHaveLength(test.count);
       }
+    });
+  });
+
+  describe("Rate Limiting Note Apis", () => {
+    beforeAll(async () => {
+      await createUser({
+        name: "noteTest",
+        email: "notes7@example.com",
+        password: "testing",
+      });
+      let res = await request(app).post("/auth/login").send({
+        email: "notes7@example.com",
+        password: "testing",
+      });
+      if (!res.body || !res.body.token) return;
+      token = res.body.token;
+    });
+
+    it("should rate limit note creation, updation and deletion", async () => {
+      for (let i = 0; i < 15; i++) {
+        const res = await request(app)
+          .post("/notes/")
+          .set("Authorization", "Bearer " + token)
+          .send({
+            title: "Note " + i,
+            body: "This is a test note",
+            tags: ["test", "note"],
+          });
+        const update = await request(app)
+          .put(`/notes/${res.body.id}`)
+          .set("Authorization", "Bearer " + token)
+          .send({ title: "Updated title" });
+        const del = await request(app)
+          .delete(`/notes/${res.body.id}`)
+          .set("Authorization", "Bearer " + token);
+        expect(res.status).toBe(200);
+        expect(update.status).toBe(200);
+        expect(del.status).toBe(200);
+      }
+      const res = await request(app)
+        .post("/notes/")
+        .set("Authorization", "Bearer " + token)
+        .send({
+          title: "Note ",
+          body: "This is a test note",
+          tags: ["test", "note"],
+        });
+      const update = await request(app)
+        .put(`/notes/${res.body.id}`)
+        .set("Authorization", "Bearer " + token)
+        .send({ title: "Updated title" });
+      const del = await request(app)
+        .delete(`/notes/${res.body.id}`)
+        .set("Authorization", "Bearer " + token);
+      expect(res.status).toBe(429);
+      expect(update.status).toBe(429);
+      expect(del.status).toBe(429);
     });
   });
 });

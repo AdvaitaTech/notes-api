@@ -5,11 +5,13 @@ import {
   BadDataError,
   TokenError,
   NotFoundError,
+  RateLimitError,
 } from "./route-errors";
 import { tokenMiddleware } from "middleware";
 import { db } from "config/db";
 import { Notes } from "config/schema";
 import { and, eq, like, or, sql } from "drizzle-orm";
+import { isRequestAllowed } from "rate-limiter/limiter";
 
 const router = Router();
 // All note routes need auth
@@ -57,6 +59,14 @@ router.post("/", async (req, res) => {
     if (!locals.success) throw new TokenError("Invalid authorization token.");
     let userId = locals.data.userId;
     const result = createNoteSchema.safeParse(req.body);
+    let isAllowed = await isRequestAllowed(
+      userId.toString(),
+      "note:create",
+      15,
+      60000
+    );
+    if (!isAllowed)
+      throw new RateLimitError("Too many requests. Please try again later.");
     if (!result.success)
       throw new BadDataError(
         "Invalid data. Required fields are title(string), body(string), and tags(array)."
@@ -170,6 +180,14 @@ router.put("/:id", async (req, res) => {
     let locals = localsSchema.safeParse(res.locals);
     if (!locals.success) throw new TokenError("Invalid authorization token.");
     let userId = locals.data.userId;
+    let isAllowed = await isRequestAllowed(
+      userId.toString(),
+      "note:update",
+      15,
+      60000
+    );
+    if (!isAllowed)
+      throw new RateLimitError("Too many requests. Please try again later.");
     let id: number;
     try {
       id = parseInt(req.params.id);
@@ -207,6 +225,14 @@ router.delete("/:id", async (req, res) => {
     let locals = localsSchema.safeParse(res.locals);
     if (!locals.success) throw new TokenError("Invalid authorization token.");
     let userId = locals.data.userId;
+    let isAllowed = await isRequestAllowed(
+      userId.toString(),
+      "note:delete",
+      15,
+      60000
+    );
+    if (!isAllowed)
+      throw new RateLimitError("Too many requests. Please try again later.");
     let id: number;
     try {
       id = parseInt(req.params.id);
